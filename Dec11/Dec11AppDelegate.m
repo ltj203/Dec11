@@ -7,14 +7,62 @@
 //
 
 #import "Dec11AppDelegate.h"
+#import "TextViewController.h"
+#import "ImageViewController.h"
+#import <MediaPlayer/MediaPlayer.h>
+
 
 @implementation Dec11AppDelegate
+@synthesize window = _window;
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    UIScreen *screen = [UIScreen mainScreen];
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
-    // Override point for customization after application launch.
-    self.window.backgroundColor = [UIColor whiteColor];
+    
+    NSBundle *bundle = [NSBundle mainBundle];
+    videoURL = [NSURL fileURLWithPath:[bundle pathForResource:@"IGotIt" ofType:@"MOV"]];
+    
+    NSArray *controllers =
+    [NSArray arrayWithObjects:
+     [[TextViewController alloc] initWithNibName:nil bundle:nil],
+     [[ImageViewController alloc] initWithNibName:nil bundle:nil],
+     [[MPMoviePlayerViewController alloc] initWithContentURL:videoURL],
+     [[UIViewController alloc] initWithNibName:nil bundle:nil],
+     nil];
+    
+    UIViewController *viewController = [controllers objectAtIndex:0];
+    viewController.title = @"Lyrics";
+    viewController.tabBarItem.image = [UIImage imageNamed: @"Text.png"];
+    
+    viewController = [controllers objectAtIndex:1];
+    viewController.title = @"Poster";
+    viewController.tabBarItem.image = [UIImage imageNamed:@"Postericon.png"];
+    
+    viewController = [controllers objectAtIndex:2];
+    viewController.title = @"Video";
+    viewController.tabBarItem.image = [UIImage imageNamed: @"Video.png"];
+    ((MPMoviePlayerViewController *)viewController).moviePlayer.shouldAutoplay = NO;
+    [((MPMoviePlayerViewController *)viewController).moviePlayer prepareToPlay];
+    
+    viewController = [controllers objectAtIndex:3];
+    viewController.title = @"Music";
+    viewController.tabBarItem.image = [UIImage imageNamed:@"Theme.png"];
+    NSURL *audioURL = [NSURL fileURLWithPath:[bundle pathForResource:@"IGotIt" ofType:@"mp3"]];
+    NSError *error = nil;
+    audioPlayer = [[AVAudioPlayer alloc] initWithContentsOfURL:audioURL error:&error];
+    if (audioPlayer == nil) {
+        NSLog(@"error == %@", error);
+        return YES;
+    }
+    audioPlayer.numberOfLoops = 1;
+    
+    UITabBarController *tabBarController = [[UITabBarController alloc] init];
+    self.window.rootViewController = tabBarController;
+    tabBarController.viewControllers = controllers;
+    tabBarController.delegate = self;
+    last = ((UIViewController *)[tabBarController.viewControllers objectAtIndex:0]).title;
+    
     [self.window makeKeyAndVisible];
     return YES;
 }
@@ -44,6 +92,27 @@
 - (void)applicationWillTerminate:(UIApplication *)application
 {
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
+}
+
+-(void) tabBarController:(UITabBarController *)tabBarController didSelectViewController:(UIViewController *)viewController{
+   
+    if (![last isEqualToString:@"Video"] && ![viewController.title isEqualToString:@"Video"]) {
+        MPMoviePlayerViewController *moviePlayerViewController = [tabBarController.viewControllers objectAtIndex:2];
+        MPMoviePlayerController *moviePlayerController = moviePlayerViewController.moviePlayer;
+        NSTimeInterval currentPlaybackTime = moviePlayerController.currentPlaybackTime;
+        moviePlayerController.contentURL = videoURL;
+        moviePlayerController.initialPlaybackTime = currentPlaybackTime;
+        [moviePlayerController prepareToPlay];
+    }
+    
+    if ([viewController.title isEqualToString:@"Music"]) {
+        [audioPlayer play];
+    } else if ([last isEqualToString:@"Music"]){
+        [audioPlayer pause];
+    }
+    
+    last = viewController.title;
+    
 }
 
 @end

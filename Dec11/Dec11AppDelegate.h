@@ -7,8 +7,15 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AVFoundation/AVAudioPlayer.h>
 
-@interface Dec11AppDelegate : UIResponder <UIApplicationDelegate>
+@interface Dec11AppDelegate : UIResponder <UIApplicationDelegate, UITabBarControllerDelegate>{
+    
+    UIWindow *_window;
+    AVAudioPlayer *audioPlayer;
+    NSURL *videoURL;
+    NSString *last;
+}
 
 @property (strong, nonatomic) UIWindow *window;
 
